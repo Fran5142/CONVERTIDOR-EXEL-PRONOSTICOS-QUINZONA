@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Meteo Puerto Montt - Melinka Selectivo</title>
+    <title>Meteo Puerto Montt - Melinka Preciso</title>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <style>
         :root { --navy: #0a192f; --cyan: #64ffda; --white: #e6f1ff; --card: #112240; }
@@ -20,7 +20,7 @@
 <body>
 
 <div class="container">
-    <h1>🚀 Sistema Meteo Puerto Montt PRO</h1>
+    <h1>🚀 Meteo Puerto Montt - Melinka Pro</h1>
     
     <div class="file-section">
         <label><b>1. SELECCIONA EL EXCEL ORIGINAL:</b></label><br><br>
@@ -37,29 +37,19 @@
         <div class="zona-card"><h3>MELINKA</h3><textarea id="txt_melinka72"></textarea></div>
     </div>
 
-    <button class="btn-grande" onclick="procesarTodo()">GENERAR EXCEL (MELINKA OPTIMIZADO)</button>
+    <button class="btn-grande" onclick="procesarTodo()">GENERAR EXCEL CORREGIDO</button>
 </div>
 
 <script>
     const meses = ["ENERO","FEBRERO","MARZO","ABRIL","MAYO","JUNIO","JULIO","AGOSTO","SEPTIEMBRE","OCTUBRE","NOVIEMBRE","DICIEMBRE"];
 
-    function limpiarTextoMeteo(t) {
+    function limpiarTexto(t) {
         if (!t) return "";
-        let limpio = t.trim();
-        limpio = limpio.replace(/,$/, ""); 
+        let limpio = t.trim().replace(/,$/, "");
         if (limpio.endsWith(".") && !/\d$/.test(limpio.slice(-2, -1))) {
             limpio = limpio.slice(0, -1);
         }
         return limpio.trim().replace(/\s+/g, " ");
-    }
-
-    function obtenerNombreDia(diaNumStr) {
-        const diasSemana = ["DOMINGO", "LUNES", "MARTES", "MIERCOLES", "JUEVES", "VIERNES", "SABADO"];
-        const num = parseInt(diaNumStr);
-        const hoy = new Date();
-        let fecha = new Date(hoy.getFullYear(), hoy.getMonth(), num);
-        if (num < hoy.getDate() - 10) fecha = new Date(hoy.getFullYear(), hoy.getMonth() + 1, num);
-        return diasSemana[fecha.getDay()];
     }
 
     function procesarTodo() {
@@ -78,104 +68,75 @@
                 const ws = wb.Sheets[idHoja];
                 if (!ws || texto === "") return;
 
-                // --- 1. CABECERA ---
-                const matchCab = texto.match(/VALIDO DESDE\s*(\d{2})\d{4}/i);
+                // --- 1. FECHAS ---
+                const matchCab = texto.match(/VALIDO DESDE\s*(\d{2})/i);
                 if (matchCab) {
-                    ws["B2"] = { t: 's', v: obtenerNombreDia(matchCab[1]) };
                     ws["B3"] = { t: 'n', v: parseInt(matchCab[1]) };
                     ws["B4"] = { t: 's', v: mesActual };
                 }
 
-                // --- 2. SITUACIÓN DÍA 1 ---
-                const sit1 = texto.match(/SITUACION SINOPTICA:\s*([\s\S]*?)(?=PRONOSTICO|VIS)/i);
-                ws["B5"] = sit1 ? { t: 's', v: limpiarTextoMeteo(sit1[1]) } : { t: 's', v: "" };
+                // --- 2. SITUACION SINOPTICA ---
+                const sit1 = texto.match(/SITUACION SINOPTICA:\s*([\s\S]*?)(?=PRONOSTICO)/i);
+                if (sit1) ws["B5"] = { t: 's', v: limpiarTexto(sit1[1]) };
 
-                // --- 3. PRONÓSTICO DÍA 1 (Fila 7) ---
-                const pronostico1 = texto.match(/PRONOSTICO:\s*([\s\S]*?)(?=TEMPERATURA|PRONOSTICO VALIDO|EMITIDO|$)/i);
-                if (pronostico1) {
-                    const p1 = pronostico1[1];
-                    const partesP1 = p1.split(",");
-                    ws["B7"] = { t: 's', v: limpiarTextoMeteo(partesP1[0]) };
+                // --- 3. PRONOSTICO DIA (B7, C7, E7, I7) ---
+                const bloqueP1 = texto.match(/PRONOSTICO:\s*([\s\S]*?)(?=PRONOSTICO VALIDO|MET011|EMITIDO|$)/i);
+                if (bloqueP1) {
+                    const p1 = bloqueP1[1];
+                    // Cielo (B7)
+                    const cielo = p1.match(/^([\s\S]*?),\s*VIS/i);
+                    if (cielo) ws["B7"] = { t: 's', v: limpiarTexto(cielo[1]) };
                     
-                    const vis1 = p1.match(/VIS\s+([\s\S]+?)(?=VTO|MAR)/i);
-                    const vto1 = p1.match(/VTO\s+([\s\S]+?)(?=MAR|$)/i);
-                    const mar1 = p1.match(/MAR\s+([\s\S]+?)(?=\.[\s\r\n]*$|\r?\n|TEMPERATURA|EMITIDO|$)/i);
-                    
-                    ws["C7"] = vis1 ? { t: 's', v: limpiarTextoMeteo(vis1[1]) } : { t: 's', v: "" };
-                    ws["E7"] = vto1 ? { t: 's', v: limpiarTextoMeteo(vto1[1]) } : { t: 's', v: "" };
-                    ws["I7"] = mar1 ? { t: 's', v: limpiarTextoMeteo(mar1[1]) } : { t: 's', v: "" };
+                    // Visibilidad (C7) - Captura VIS + Texto hasta VTO
+                    const vis = p1.match(/VIS\s+([\s\S]*?)(?=VTO)/i);
+                    if (vis) ws["C7"] = { t: 's', v: limpiarTexto(vis[1]) };
+
+                    // Viento (E7) - Captura VTO + Texto hasta MAR
+                    const vto = p1.match(/VTO\s+([\s\S]*?)(?=MAR)/i);
+                    if (vto) ws["E7"] = { t: 's', v: limpiarTexto(vto[1]) };
+
+                    // MAR (I7) - Todo lo que sigue después de MAR
+                    const mar = p1.match(/MAR\s+([\s\S]*?)(?=\.[\s\r\n]*$|\r?\n|EMITIDO|$)/i);
+                    if (mar) ws["I7"] = { t: 's', v: limpiarTexto(mar[1]) };
                 }
+
+                // --- 4. PRONOSTICO NOCTURNO (B13, E14) ---
+                const bloqueP2 = texto.match(/PRONOSTICO VALIDO DESDE \d{6} HASTA \d{6} HORA LOCAL\.\s*([\s\S]*?)(?=LUNES|MARTES|MIERCOLES|JUEVES|VIERNES|SABADO|DOMINGO|MET011|EMITIDO|$)/i);
+                
+                // Primero limpiamos el bloque nocturno por si acaso
+                ["B13", "B14", "C14", "E14", "I14"].forEach(c => ws[c] = {t:'s', v:""});
+
+                if (bloqueP2) {
+                    const p2 = bloqueP2[1].trim();
+                    // B13: Primera frase antes de la coma (SITUACION)
+                    const situNoc = p2.match(/^([\s\S]*?),\s*VTO/i);
+                    if (situNoc) {
+                        ws["B13"] = { t: 's', v: limpiarTexto(situNoc[1]) };
+                    } else {
+                        // Si no hay coma/vto, tomamos la primera línea como situacion
+                        ws["B13"] = { t: 's', v: limpiarTexto(p2.split(",")[0]) };
+                    }
+
+                    // E14: Viento (VTO en adelante)
+                    const vtoNoc = p2.match(/VTO\s+([\s\S]*?)(?=\.[\s\r\n]*$|\r?\n|$)/i);
+                    if (vtoNoc) ws["E14"] = { t: 's', v: limpiarTexto(vtoNoc[1]) };
+                }
+
+                // J y K ficticios
                 ws["J7"] = { t: 's', v: " " }; ws["K7"] = { t: 's', v: " " };
-
-                // --- 4. TEMPERATURAS / UV (Solo si existen) ---
-                const tMin1 = texto.match(/MINIMA\s*PROBABLE\s*[:\-]?\s*(\d+\s*°C)/i);
-                const tMax1 = texto.match(/MAXIMA\s*PROBABLE\s*[:\-]?\s*(\d+\s*°C)/i);
-                ws["B8"] = tMin1 ? { t: 's', v: tMin1[1] } : { t: 's', v: "" };
-                ws["B9"] = tMax1 ? { t: 's', v: tMax1[1] } : { t: 's', v: "" };
-
-                const uv = texto.match(/INDICE DE RADIACION\s*([\s\S]*?\(FUENTE DMC\)\.?)/i);
-                ws["B10"] = uv ? { t: 's', v: limpiarTextoMeteo(uv[1]) } : { t: 's', v: "" };
-
-                // --- 5. NOCTURNO (Fila 14) ---
-                const matchNoc = texto.match(/PRONOSTICO VALIDO DESDE\s*(\d{2})\d{4}\s*HASTA\s*(\d{2})\d{4}\s*HORA LOCAL\.\s*([\s\S]*?)(?=(?:LUNES|MARTES|MIERCOLES|JUEVES|VIERNES|SABADO|DOMINGO)\s*\d{2}|MET011|EMITIDO|$)/i);
-                if (matchNoc) {
-                    const cuerpoNoc = matchNoc[3];
-                    const partesN = cuerpoNoc.split(",");
-                    ws["B13"] = { t: 's', v: limpiarTextoMeteo(partesN[0]) };
-                    ws["B14"] = { t: 's', v: partesN[1] ? limpiarTextoMeteo(partesN[1]) : "" };
-                    
-                    const visN = cuerpoNoc.match(/VIS\s+([\s\S]+?)(?=VTO|MAR)/i);
-                    const vtoN = cuerpoNoc.match(/VTO\s+([\s\S]+?)(?=MAR|$)/i);
-                    const marN = cuerpoNoc.match(/MAR\s+([\s\S]+?)(?=\.[\s\r\n]*$|\r?\n|$)/i);
-                    
-                    ws["C14"] = visN ? { t: 's', v: limpiarTextoMeteo(visN[1]) } : { t: 's', v: "" };
-                    ws["E14"] = vtoN ? { t: 's', v: limpiarTextoMeteo(vtoN[1]) } : { t: 's', v: "" };
-                    ws["I14"] = marN ? { t: 's', v: limpiarTextoMeteo(marN[1]) } : { t: 's', v: "" };
-                    ws["J14"] = { t: 's', v: " " }; ws["K14"] = { t: 's', v: " " };
-                } else {
-                    // Si no hay nocturno, limpiar filas 11 a 14
-                    ["B11","B12","C11","C12","B13","B14","C14","E14","I14","J14","K14"].forEach(c => ws[c] = {t:'s', v:""});
+                ws["J14"] = { t: 's', v: " " }; ws["K14"] = { t: 's', v: " " };
+                
+                // Limpiar Temperaturas si no existen
+                if (!texto.includes("MINIMA")) {
+                    ws["B8"] = { t: 's', v: "" }; ws["B19"] = { t: 's', v: "" }; ws["B25"] = { t: 's', v: "" };
                 }
-
-                // --- 6. DÍAS FUTUROS (16 y 22) ---
-                const regexDias = /(LUNES|MARTES|MIERCOLES|JUEVES|VIERNES|SABADO|DOMINGO)\s*(\d{2})\.\s*SITUACION SINOPTICA:\s*([\s\S]*?)\s*PRONOSTICO:\s*([\s\S]*?)(?=\s*(?:MINIMA|LUNES|MARTES|MIERCOLES|JUEVES|VIERNES|SABADO|DOMINGO)|MET011|EMITIDO|$)/gi;
-                let matchDia;
-                let contadorDia = 0;
-                while ((matchDia = regexDias.exec(texto)) !== null) {
-                    contadorDia++;
-                    if (contadorDia > 2) break;
-                    let fBase = (contadorDia === 1) ? 16 : 22;
-                    let fPron = (fBase + 2); // 18 o 24
-                    
-                    ws["B" + fBase] = { t: 's', v: matchDia[1] };
-                    ws["C" + fBase] = { t: 'n', v: parseInt(matchDia[2]) };
-                    ws["D" + fBase] = { t: 's', v: mesActual }; 
-                    ws["B" + (fBase + 1)] = { t: 's', v: limpiarTextoMeteo(matchDia[3]) };
-
-                    const cuerpo = matchDia[4];
-                    const partesF = cuerpo.split(",");
-                    ws["B" + fPron] = { t: 's', v: limpiarTextoMeteo(partesF[0]) };
-                    
-                    const visF = cuerpo.match(/VIS\s+([\s\S]+?)(?=VTO|MAR)/i);
-                    const vtoF = cuerpo.match(/VTO\s+([\s\S]+?)(?=MAR|$)/i);
-                    const marF = cuerpo.match(/MAR\s+([\s\S]+?)(?=\.[\s\r\n]*$|\r?\n|$)/i);
-                    
-                    ws["C" + fPron] = visF ? { t: 's', v: limpiarTextoMeteo(visF[1]) } : { t: 's', v: "" };
-                    ws["E" + fPron] = vtoF ? { t: 's', v: limpiarTextoMeteo(vtoF[1]) } : { t: 's', v: "" };
-                    ws["I" + fPron] = marF ? { t: 's', v: limpiarTextoMeteo(marF[1]) } : { t: 's', v: "" };
-                    ws["J" + fPron] = { t: 's', v: " " }; ws["K" + fPron] = { t: 's', v: " " };
-
-                    // Temperaturas Futuras (Solo si existen cerca del día)
-                    const bloqueFut = texto.substring(matchDia.index, matchDia.index + 700);
-                    const tMinF = bloqueFut.match(/MINIMA\s*PROBABLE\s*[:\-]?\s*(\d+\s*°C)/i);
-                    const tMaxF = bloqueFut.match(/MAXIMA\s*PROBABLE\s*[:\-]?\s*(\d+\s*°C)/i);
-                    ws["B" + (fBase + 3)] = tMinF ? { t: 's', v: tMinF[1] } : { t: 's', v: "" };
-                    ws["B" + (fBase + 4)] = tMaxF ? { t: 's', v: tMaxF[1] } : { t: 's', v: "" };
+                if (!texto.includes("MAXIMA")) {
+                    ws["B9"] = { t: 's', v: "" }; ws["B20"] = { t: 's', v: "" }; ws["B26"] = { t: 's', v: "" };
                 }
             });
 
-            XLSX.writeFile(wb, "Meteo_Melinka_Limpio.xlsx");
-            alert("✅ ¡Archivo generado! Se han respetado las celdas vacías en Melinka.");
+            XLSX.writeFile(wb, "Meteo_Melinka_Ruta.xlsx");
+            alert("✅ ¡Excel generado! Datos de Melinka distribuidos correctamente.");
         };
         reader.readAsArrayBuffer(fileInput.files[0]);
     }
