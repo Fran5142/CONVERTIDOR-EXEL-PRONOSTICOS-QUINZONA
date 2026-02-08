@@ -5,23 +5,23 @@
     <title>Meteo Puerto Montt - Sin Temperaturas Forzadas</title>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <style>
-        :root { --navy: #0a192f; --cyan: #64ffda; --white: #e6f1ff; --card: #112240; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--navy); color: var(--white); padding: 20px; }
-        .container { max-width: 1200px; margin: auto; }
-        h1 { text-align: center; color: var(--cyan); text-transform: uppercase; letter-spacing: 2px; }
-        .file-section { background: var(--card); padding: 20px; border-radius: 12px; margin-bottom: 20px; border: 1px solid var(--cyan); text-align: center; }
-        .grid-zonas { display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 15px; }
-        .zona-card { background: var(--card); padding: 15px; border-radius: 10px; border-top: 4px solid var(--cyan); }
-        textarea { width: 100%; height: 200px; background: #0a192f; border: 1px solid #233554; color: white; border-radius: 5px; padding: 10px; box-sizing: border-box; resize: none; font-size: 0.85rem; }
-        .btn-grande { background: var(--cyan); color: var(--navy); border: none; padding: 20px; width: 100%; border-radius: 12px; font-weight: bold; font-size: 1.2rem; cursor: pointer; margin-top: 25px; transition: 0.3s; }
-        .btn-grande:hover { transform: translateY(-3px); box-shadow: 0 10px 20px rgba(100, 255, 218, 0.4); }
+        :root { --navy:#0a192f; --cyan:#64ffda; --white:#e6f1ff; --card:#112240; }
+        body { font-family:'Segoe UI',sans-serif; background:var(--navy); color:var(--white); padding:20px; }
+        .container { max-width:1200px; margin:auto; }
+        h1 { text-align:center; color:var(--cyan); text-transform:uppercase; letter-spacing:2px; }
+        .file-section { background:var(--card); padding:20px; border-radius:12px; margin-bottom:20px; border:1px solid var(--cyan); text-align:center; }
+        .grid-zonas { display:grid; grid-template-columns:repeat(auto-fit,minmax(350px,1fr)); gap:15px; }
+        .zona-card { background:var(--card); padding:15px; border-radius:10px; border-top:4px solid var(--cyan); }
+        textarea { width:100%; height:200px; background:#0a192f; border:1px solid #233554; color:white; border-radius:5px; padding:10px; resize:none; font-size:0.85rem; }
+        .btn-grande { background:var(--cyan); color:var(--navy); border:none; padding:20px; width:100%; border-radius:12px; font-weight:bold; font-size:1.2rem; cursor:pointer; margin-top:25px; transition:.3s; }
+        .btn-grande:hover { transform:translateY(-3px); box-shadow:0 10px 20px rgba(100,255,218,.4); }
     </style>
 </head>
 <body>
 
 <div class="container">
     <h1>🚀 Sistema Meteo Puerto Montt PRO</h1>
-    
+
     <div class="file-section">
         <label><b>1. SELECCIONA EL EXCEL ORIGINAL:</b></label><br><br>
         <input type="file" id="inputExcel" accept=".xlsx">
@@ -41,145 +41,87 @@
 </div>
 
 <script>
-    const meses = ["ENERO","FEBRERO","MARZO","ABRIL","MAYO","JUNIO","JULIO","AGOSTO","SEPTIEMBRE","OCTUBRE","NOVIEMBRE","DICIEMBRE"];
+const meses = ["ENERO","FEBRERO","MARZO","ABRIL","MAYO","JUNIO","JULIO","AGOSTO","SEPTIEMBRE","OCTUBRE","NOVIEMBRE","DICIEMBRE"];
 
-    function limpiarTexto(t) {
-        if (!t) return "";
-        let limpio = t.trim();
-        limpio = limpio.replace(/,$/, "");
-        // Solo quita punto si no hay un número justo antes (protege decimales)
-        if (limpio.endsWith(".") && !/\d$/.test(limpio.slice(0,-1))) {
-            limpio = limpio.slice(0, -1);
-        }
-        return limpio.trim().replace(/\s+/g, " ");
-    }
+function limpiarTexto(t){
+    if(!t) return "";
+    let l=t.trim().replace(/,$/,"");
+    if(l.endsWith(".") && !/\d$/.test(l.slice(0,-1))) l=l.slice(0,-1);
+    return l.replace(/\s+/g," ");
+}
 
-    function obtenerNombreDia(diaNumStr) {
-        const diasSemana = ["DOMINGO", "LUNES", "MARTES", "MIERCOLES", "JUEVES", "VIERNES", "SABADO"];
-        const num = parseInt(diaNumStr);
-        const hoy = new Date();
-        let fecha = new Date(hoy.getFullYear(), hoy.getMonth(), num);
-        if (num < hoy.getDate() - 10) fecha = new Date(hoy.getFullYear(), hoy.getMonth() + 1, num);
-        return diasSemana[fecha.getDay()];
-    }
+function obtenerNombreDia(d){
+    const dias=["DOMINGO","LUNES","MARTES","MIERCOLES","JUEVES","VIERNES","SABADO"];
+    const hoy=new Date();
+    let f=new Date(hoy.getFullYear(),hoy.getMonth(),parseInt(d));
+    if(parseInt(d)<hoy.getDate()-10) f=new Date(hoy.getFullYear(),hoy.getMonth()+1,parseInt(d));
+    return dias[f.getDay()];
+}
 
-    function procesarTodo() {
-        const fileInput = document.getElementById("inputExcel");
-        if (fileInput.files.length === 0) { alert("Sube el Excel."); return; }
+function espacios(ws,fila){
+    ws["J"+fila]={t:'s',v:"  "};
+    ws["K"+fila]={t:'s',v:"  "};
+}
 
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            const data = new Uint8Array(e.target.result);
-            const wb = XLSX.read(data, { type: 'array' });
-            const idsHojas = ["maullin72", "chacao72", "pmontt72", "guafo72", "chacabuco72", "golfopenas72", "melinka72"];
-            const mesActual = meses[new Date().getMonth()];
+function procesarTodo(){
+    const fi=document.getElementById("inputExcel");
+    if(fi.files.length===0){ alert("Sube el Excel."); return; }
 
-            idsHojas.forEach(idHoja => {
-                const texto = document.getElementById("txt_" + idHoja).value.trim();
-                if (texto === "") return;
-                const ws = wb.Sheets[idHoja];
-                if (!ws) return;
+    const reader=new FileReader();
+    reader.onload=e=>{
+        const wb=XLSX.read(new Uint8Array(e.target.result),{type:'array'});
+        const hojas=["maullin72","chacao72","pmontt72","guafo72","chacabuco72","golfopenas72","melinka72"];
+        const mesActual=meses[new Date().getMonth()];
 
-                // --- 1. CABECERA ---
-                const matchCab = texto.match(/VALIDO DESDE\s*(\d{2})\d{4}/i);
-                if (matchCab) {
-                    ws["B2"] = { t: 's', v: obtenerNombreDia(matchCab[1]) };
-                    ws["B3"] = { t: 'n', v: parseInt(matchCab[1]) };
-                    ws["B4"] = { t: 's', v: mesActual };
-                }
+        hojas.forEach(id=>{
+            const texto=document.getElementById("txt_"+id).value.trim();
+            if(!texto) return;
+            const ws=wb.Sheets[id];
+            if(!ws) return;
 
-                // --- 2. DÍA 1 ---
-                const sit1 = texto.match(/SITUACION SINOPTICA:\s*([\s\S]*?)(?=PRONOSTICO|VIS)/i);
-                if (sit1) ws["B5"] = { t: 's', v: limpiarTexto(sit1[1]) };
+            const cab=texto.match(/VALIDO DESDE\s*(\d{2})\d{4}/i);
+            if(cab){
+                ws["B2"]={t:'s',v:obtenerNombreDia(cab[1])};
+                ws["B3"]={t:'n',v:parseInt(cab[1])};
+                ws["B4"]={t:'s',v:mesActual};
+            }
 
-                const pronostico1 = texto.match(/PRONOSTICO:\s*([\s\S]*?)(?=TEMPERATURA|PRONOSTICO VALIDO|EMITIDO|$)/i);
-                if (pronostico1) {
-                    const p1 = pronostico1[1];
-                    const partesP1 = p1.split(",");
-                    if (partesP1.length >= 1) ws["B7"] = { t: 's', v: limpiarTexto(partesP1[0]) };
-                    
-                    const vis1 = p1.match(/VIS\s+([\s\S]+?)(?=VTO|MAR)/i);
-                    const vto1 = p1.match(/VTO\s+([\s\S]+?)(?=MAR|$)/i);
-                    const mar1 = p1.match(/MAR\s+([\s\S]+?)(?=\.[\s\r\n]*$|\r?\n|$)/i);
-                    
-                    if (vis1) ws["C7"] = { t: 's', v: limpiarTexto(vis1[1]) };
-                    if (vto1) ws["E7"] = { t: 's', v: limpiarTexto(vto1[1]) };
-                    if (mar1) ws["I7"] = { t: 's', v: limpiarTexto(mar1[1]) };
-                }
-                ws["J7"] = { t: 's', v: " " }; ws["K7"] = { t: 's', v: " " };
+            const sit=texto.match(/SITUACION SINOPTICA:\s*([\s\S]*?)(?=PRONOSTICO|VIS)/i);
+            if(sit) ws["B5"]={t:'s',v:limpiarTexto(sit[1])};
 
-                // Solo agrega temperaturas si el texto las contiene
-                const tMin1 = texto.match(/MINIMA\s*PROBABLE\s*[:\-]?\s*(\d+\s*°C)/i);
-                const tMax1 = texto.match(/MAXIMA\s*PROBABLE\s*[:\-]?\s*(\d+\s*°C)/i);
-                ws["B8"] = tMin1 ? { t: 's', v: tMin1[1] } : { t: 's', v: "" };
-                ws["B9"] = tMax1 ? { t: 's', v: tMax1[1] } : { t: 's', v: "" };
+            const pro=texto.match(/PRONOSTICO:\s*([\s\S]*?)(?=TEMPERATURA|PRONOSTICO VALIDO|EMITIDO|$)/i);
+            if(pro){
+                const c=pro[1];
+                ws["B7"]={t:'s',v:limpiarTexto(c.split(",")[0])};
+                const vis=c.match(/VIS\s+(.+?)(?=VTO|MAR)/i);
+                const vto=c.match(/VTO\s+(.+?)(?=MAR|$)/i);
+                const mar=c.match(/MAR\s+(.+?)(?=\.|\n|$)/i);
+                if(vis) ws["C7"]={t:'s',v:limpiarTexto(vis[1])};
+                if(vto) ws["E7"]={t:'s',v:limpiarTexto(vto[1])};
+                if(mar) ws["I7"]={t:'s',v:limpiarTexto(mar[1])};
+            }
+            espacios(ws,7);
 
-                const uv = texto.match(/INDICE DE RADIACION\s*([\s\S]*?\(FUENTE DMC\)\.?)/i);
-                if (uv) ws["B10"] = { t: 's', v: limpiarTexto(uv[1]) };
+            const noc=texto.match(/PRONOSTICO VALIDO DESDE\s*(\d{2})\d{4}\s*HASTA\s*(\d{2})\d{4}.*?([\s\S]*?)(?=LUNES|MARTES|MIERCOLES|JUEVES|VIERNES|SABADO|DOMINGO|MET011|EMITIDO|$)/i);
+            if(noc){
+                ws["B11"]={t:'s',v:obtenerNombreDia(noc[1])+" "+noc[1]};
+                ws["B12"]={t:'s',v:obtenerNombreDia(noc[2])+" "+noc[2]};
+                ws["C11"]={t:'s',v:"20:00"};
+                ws["C12"]={t:'s',v:"08:00"};
+                ws["B13"]={t:'s',v:limpiarTexto(noc[3].split(",")[0])};
+                ws["B14"]={t:'s',v:limpiarTexto(noc[3].split(",")[1]||"")};
+            }
+            espacios(ws,14);
 
-                // --- 3. NOCTURNO (Fila 14) ---
-                const matchNoc = texto.match(/PRONOSTICO VALIDO DESDE\s*(\d{2})\d{4}\s*HASTA\s*(\d{2})\d{4}\s*HORA LOCAL\.\s*([\s\S]*?)(?=(?:LUNES|MARTES|MIERCOLES|JUEVES|VIERNES|SABADO|DOMINGO)\s*\d{2}|MET011|EMITIDO|$)/i);
-                if (matchNoc) {
-                    ws["B11"] = { t: 's', v: obtenerNombreDia(matchNoc[1]) + " " + matchNoc[1] };
-                    ws["B12"] = { t: 's', v: obtenerNombreDia(matchNoc[2]) + " " + matchNoc[2] };
-                    ws["C11"] = { t: 's', v: "20:00" }; ws["C12"] = { t: 's', v: "08:00" };
-                    const cuerpoNoc = matchNoc[3];
-                    const partesN = cuerpoNoc.split(",");
-                    if (partesN.length >= 2) {
-                        ws["B13"] = { t: 's', v: limpiarTexto(partesN[0]) };
-                        ws["B14"] = { t: 's', v: limpiarTexto(partesN[1]) };
-                        const visN = cuerpoNoc.match(/VIS\s+([\s\S]+?)(?=VTO|MAR)/i);
-                        const vtoN = cuerpoNoc.match(/VTO\s+([\s\S]+?)(?=MAR|$)/i);
-                        const marN = cuerpoNoc.match(/MAR\s+([\s\S]+?)(?=\.[\s\r\n]*$|\r?\n|$)/i);
-                        if (visN) ws["C14"] = { t: 's', v: limpiarTexto(visN[1]) };
-                        if (vtoN) ws["E14"] = { t: 's', v: limpiarTexto(vtoN[1]) };
-                        if (marN) ws["I14"] = { t: 's', v: limpiarTexto(marN[1]) };
-                    }
-                    ws["J14"] = { t: 's', v: " " }; ws["K14"] = { t: 's', v: " " };
-                }
+            espacios(ws,18);
+            espacios(ws,24);
+        });
 
-                // --- 4. DÍAS FUTUROS ---
-                const regexDias = /(LUNES|MARTES|MIERCOLES|JUEVES|VIERNES|SABADO|DOMINGO)\s*(\d{2})\.\s*SITUACION SINOPTICA:\s*([\s\S]*?)\s*PRONOSTICO:\s*([\s\S]*?)(?=\s*(?:MINIMA|LUNES|MARTES|MIERCOLES|JUEVES|VIERNES|SABADO|DOMINGO)|MET011|EMITIDO|$)/gi;
-                let matchDia;
-                let contadorDia = 0;
-                while ((matchDia = regexDias.exec(texto)) !== null) {
-                    contadorDia++;
-                    if (contadorDia > 2) break;
-                    let filaBase = (contadorDia === 1) ? 16 : 22;
-                    let filaPron = (contadorDia === 1) ? 18 : 24;
-                    
-                    ws["B" + filaBase] = { t: 's', v: matchDia[1] };
-                    ws["C" + filaBase] = { t: 'n', v: parseInt(matchDia[2]) };
-                    ws["D" + filaBase] = { t: 's', v: mesActual }; 
-                    ws["B" + (filaBase + 1)] = { t: 's', v: limpiarTexto(matchDia[3]) };
-
-                    const cuerpo = matchDia[4];
-                    const partesF = cuerpo.split(",");
-                    if (partesF.length >= 1) ws["B" + filaPron] = { t: 's', v: limpiarTexto(partesF[0]) };
-                    
-                    const visF = cuerpo.match(/VIS\s+([\s\S]+?)(?=VTO|MAR)/i);
-                    const vtoF = cuerpo.match(/VTO\s+([\s\S]+?)(?=MAR|$)/i);
-                    const marF = cuerpo.match(/MAR\s+([\s\S]+?)(?=\.[\s\r\n]*$|\r?\n|$)/i);
-                    
-                    if (visF) ws["C" + filaPron] = { t: 's', v: limpiarTexto(visF[1]) };
-                    if (vtoF) ws["E" + filaPron] = { t: 's', v: limpiarTexto(vtoF[1]) };
-                    if (marF) ws["I" + filaPron] = { t: 's', v: limpiarTexto(marF[1]) };
-                    ws["J" + filaPron] = { t: 's', v: " " }; ws["K" + filaPron] = { t: 's', v: " " };
-
-                    // Buscar temperaturas solo en el rango de este día
-                    const bloqueFuturo = texto.substring(matchDia.index, matchDia.index + 650);
-                    const tMinF = bloqueFuturo.match(/MINIMA\s*PROBABLE\s*[:\-]?\s*(\d+\s*°C)/i);
-                    const tMaxF = bloqueFuturo.match(/MAXIMA\s*PROBABLE\s*[:\-]?\s*(\d+\s*°C)/i);
-                    ws["B" + (filaBase + 3)] = tMinF ? { t: 's', v: tMinF[1] } : { t: 's', v: "" };
-                    ws["B" + (filaBase + 4)] = tMaxF ? { t: 's', v: tMaxF[1] } : { t: 's', v: "" };
-                }
-            });
-
-            XLSX.writeFile(wb, "Meteo_PM_Validado.xlsx");
-            alert("✅ ¡Procesado! Las celdas de temperatura quedarán vacías si el texto no las contiene.");
-        };
-        reader.readAsArrayBuffer(fileInput.files[0]);
-    }
+        XLSX.writeFile(wb,"Meteo_PM_Validado.xlsx");
+        alert("✅ Excel generado con espacios ficticios aplicados.");
+    };
+    reader.readAsArrayBuffer(fi.files[0]);
+}
 </script>
 </body>
 </html>
