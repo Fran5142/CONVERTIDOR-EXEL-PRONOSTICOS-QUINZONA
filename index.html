@@ -2,88 +2,65 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Meteo Puerto Montt - Carga por TXT</title>
+    <title>Meteo Puerto Montt - Extracción Garantizada</title>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <style>
         :root { --navy: #0a192f; --cyan: #64ffda; --white: #e6f1ff; --card: #112240; }
         body { font-family: 'Segoe UI', sans-serif; background: var(--navy); color: var(--white); padding: 20px; }
         .container { max-width: 1200px; margin: auto; }
         h1 { text-align: center; color: var(--cyan); text-transform: uppercase; letter-spacing: 2px; }
-        .file-section { background: var(--card); padding: 25px; border-radius: 12px; margin-bottom: 20px; border: 1px solid var(--cyan); display: flex; flex-direction: column; gap: 15px; align-items: center; }
+        .file-section { background: var(--card); padding: 20px; border-radius: 12px; margin-bottom: 20px; border: 1px solid var(--cyan); text-align: center; }
         .grid-zonas { display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 15px; }
         .zona-card { background: var(--card); padding: 15px; border-radius: 10px; border-top: 4px solid var(--cyan); position: relative; }
-        .status-badge { position: absolute; top: 10px; right: 10px; font-size: 0.7rem; padding: 2px 8px; border-radius: 10px; display: none; }
-        .status-loaded { background: var(--cyan); color: var(--navy); display: block; }
-        textarea { width: 100%; height: 150px; background: #0a192f; border: 1px solid #233554; color: white; border-radius: 5px; padding: 10px; box-sizing: border-box; resize: none; font-size: 0.85rem; margin-top: 10px; }
+        textarea { width: 100%; height: 180px; background: #0a192f; border: 1px solid #233554; color: white; border-radius: 5px; padding: 10px; box-sizing: border-box; resize: none; font-size: 0.85rem; }
         .btn-grande { background: var(--cyan); color: var(--navy); border: none; padding: 20px; width: 100%; border-radius: 12px; font-weight: bold; font-size: 1.2rem; cursor: pointer; margin-top: 25px; transition: 0.3s; }
         .btn-grande:hover { transform: translateY(-3px); box-shadow: 0 10px 20px rgba(100, 255, 218, 0.4); }
-        .input-file-custom { background: #233554; padding: 10px; border-radius: 5px; cursor: pointer; border: 1px dashed var(--cyan); }
+        .status-badge { background: var(--cyan); color: var(--navy); font-size: 0.7rem; padding: 2px 8px; border-radius: 10px; position: absolute; top: 15px; right: 15px; display: none; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1>🚀 Meteo Puerto Montt - Carga Inteligente</h1>
+    <h1>🚀 Sistema Meteo Puerto Montt - Validado</h1>
     
     <div class="file-section">
-        <div>
-            <label><b>1. SELECCIONA TU EXCEL (.xlsx):</b></label><br>
-            <input type="file" id="inputExcel" accept=".xlsx" class="input-file-custom">
-        </div>
-        <hr style="width:100%; border:0; border-top:1px solid #233554;">
-        <div>
-            <label><b>2. SUBE ARCHIVOS TXT (maullin72.txt, pmontt72.txt, etc):</b></label><br>
-            <input type="file" id="inputTxts" accept=".txt" multiple class="input-file-custom" onchange="leerArchivosTxt(this)">
-            <p style="font-size: 0.8rem; color: #8892b0;">* Puedes seleccionar múltiples archivos a la vez.</p>
-        </div>
+        <label><b>1. EXCEL ORIGINAL:</b></label> <input type="file" id="inputExcel" accept=".xlsx"><br><br>
+        <label><b>2. SUBIR TXTs (Opcional):</b></label> <input type="file" id="inputTxts" accept=".txt" multiple onchange="cargarArchivos(this)">
     </div>
 
-    <div class="grid-zonas" id="gridContenedor">
-        <div class="zona-card"><h3>MAULLÍN</h3><span id="badge_maullin72" class="status-badge">CARGADO</span><textarea id="txt_maullin72"></textarea></div>
-        <div class="zona-card"><h3>CHACAO</h3><span id="badge_chacao72" class="status-badge">CARGADO</span><textarea id="txt_chacao72"></textarea></div>
-        <div class="zona-card"><h3>PUERTO MONTT</h3><span id="badge_pmontt72" class="status-badge">CARGADO</span><textarea id="txt_pmontt72"></textarea></div>
-        <div class="zona-card"><h3>BOCA DEL GUAFO</h3><span id="badge_guafo72" class="status-badge">CARGADO</span><textarea id="txt_guafo72"></textarea></div>
-        <div class="zona-card"><h3>CHACABUCO</h3><span id="badge_chacabuco72" class="status-badge">CARGADO</span><textarea id="txt_chacabuco72"></textarea></div>
-        <div class="zona-card"><h3>GOLFO DE PENAS</h3><span id="badge_golfopenas72" class="status-badge">CARGADO</span><textarea id="txt_golfopenas72"></textarea></div>
-        <div class="zona-card"><h3>MELINKA</h3><span id="badge_melinka72" class="status-badge">CARGADO</span><textarea id="txt_melinka72"></textarea></div>
+    <div class="grid-zonas">
+        <div class="zona-card"><h3>MAULLÍN</h3><span id="b_maullin72" class="status-badge">OK</span><textarea id="txt_maullin72"></textarea></div>
+        <div class="zona-card"><h3>CHACAO</h3><span id="b_chacao72" class="status-badge">OK</span><textarea id="txt_chacao72"></textarea></div>
+        <div class="zona-card"><h3>PUERTO MONTT</h3><span id="b_pmontt72" class="status-badge">OK</span><textarea id="txt_pmontt72"></textarea></div>
+        <div class="zona-card"><h3>BOCA DEL GUAFO</h3><span id="b_guafo72" class="status-badge">OK</span><textarea id="txt_guafo72"></textarea></div>
+        <div class="zona-card"><h3>CHACABUCO</h3><span id="b_chacabuco72" class="status-badge">OK</span><textarea id="txt_chacabuco72"></textarea></div>
+        <div class="zona-card"><h3>GOLFO DE PENAS</h3><span id="b_golfopenas72" class="status-badge">OK</span><textarea id="txt_golfopenas72"></textarea></div>
+        <div class="zona-card"><h3>MELINKA</h3><span id="b_melinka72" class="status-badge">OK</span><textarea id="txt_melinka72"></textarea></div>
     </div>
 
-    <button class="btn-grande" onclick="procesarTodo()">GENERAR EXCEL VALIDADO</button>
+    <button class="btn-grande" onclick="procesarTodo()">GENERAR EXCEL CON DATOS VISIBLES</button>
 </div>
 
 <script>
     const meses = ["ENERO","FEBRERO","MARZO","ABRIL","MAYO","JUNIO","JULIO","AGOSTO","SEPTIEMBRE","OCTUBRE","NOVIEMBRE","DICIEMBRE"];
 
-    // Función para leer los TXT y volcarlos a los textareas correspondientes
-    function leerArchivosTxt(input) {
-        const archivos = input.files;
-        for (let i = 0; i < archivos.length; i++) {
-            const archivo = archivos[i];
-            const nombreSinExt = archivo.name.toLowerCase().replace(".txt", "");
+    function cargarArchivos(input) {
+        Array.from(input.files).forEach(file => {
+            const id = file.name.toLowerCase().replace(".txt", "");
             const reader = new FileReader();
-
-            reader.onload = function(e) {
-                const contenido = e.target.result;
-                const idDestino = "txt_" + nombreSinExt;
-                const areaTexto = document.getElementById(idDestino);
-                const badge = document.getElementById("badge_" + nombreSinExt);
-
-                if (areaTexto) {
-                    areaTexto.value = contenido;
-                    if (badge) badge.classList.add("status-loaded");
-                }
+            reader.onload = (e) => {
+                const ta = document.getElementById("txt_" + id);
+                if (ta) { ta.value = e.target.result; document.getElementById("b_" + id).style.display = "block"; }
             };
-            reader.readAsText(archivo);
-        }
+            reader.readAsText(file);
+        });
     }
 
     function limpiarTexto(t) {
         if (!t) return "";
-        let limpio = t.trim().replace(/,$/, "");
-        if (limpio.endsWith(".") && !/\d$/.test(limpio.slice(-2, -1))) {
-            limpio = limpio.slice(0, -1);
-        }
-        return limpio.trim().replace(/\s+/g, " ");
+        let l = t.trim().replace(/,$/, "");
+        if (l.endsWith(".") && !/\d$/.test(l.slice(-2, -1))) l = l.slice(0, -1);
+        return l.trim().replace(/\s+/g, " ");
     }
 
     function obtenerNombreDia(diaNumStr) {
@@ -110,49 +87,90 @@
                 const ws = wb.Sheets[idHoja];
                 if (!ws) return;
 
-                // Limpieza inicial y espacios ficticios en J y K
-                const celdasABorrar = ["B2","B3","B4","B5","B7","C7","E7","I7","B8","B9","B10","B11","B12","C11","C12","B13","B14","C14","E14","I14","B16","C16","D16","B17","B18","C18","E18","I18","B19","B20","B22","C22","D22","B23","B24","C24","E24","I24","B25","B26"];
-                celdasABorrar.forEach(ref => { ws[ref] = { t: 's', v: "" } });
-                ["J7","K7","J14","K14","J18","K18","J24","K24"].forEach(ref => { ws[ref] = { t: 's', v: "  " } });
+                // Limpieza total y Espacios J/K
+                const borrar = ["B2","B3","B4","B5","B7","C7","E7","I7","B8","B9","B10","B11","B12","C11","C12","B13","B14","C14","E14","I14","B16","C16","D16","B17","B18","C18","E18","I18","B19","B20","B22","C22","D22","B23","B24","C24","E24","I24","B25","B26"];
+                borrar.forEach(r => ws[r] = { t: 's', v: "" });
+                ["J7","K7","J14","K14","J18","K18","J24","K24"].forEach(r => ws[r] = { t: 's', v: "  " });
 
                 const texto = document.getElementById("txt_" + idHoja).value.trim();
-                if (texto === "") return;
+                if (!texto) return;
 
-                // --- Lógica de Extracción de Datos ---
-                const matchCab = texto.match(/VALIDO DESDE\s*(\d{2})/i);
-                if (matchCab) {
-                    ws["B2"] = { t: 's', v: obtenerNombreDia(matchCab[1]) };
-                    ws["B3"] = { t: 'n', v: parseInt(matchCab[1]) };
+                // 1. CABECERA
+                const mCab = texto.match(/VALIDO DESDE\s*(\d{2})/i);
+                if (mCab) {
+                    ws["B2"] = { t: 's', v: obtenerNombreDia(mCab[1]) };
+                    ws["B3"] = { t: 'n', v: parseInt(mCab[1]) };
                     ws["B4"] = { t: 's', v: mesActual };
                 }
 
-                const sit1 = texto.match(/SITUACION SINOPTICA:\s*([\s\S]*?)(?=PRONOSTICO|VIS)/i);
-                if (sit1) ws["B5"] = { t: 's', v: limpiarTexto(sit1[1]) };
+                // 2. SITUACION Y PRONOSTICO DIA
+                const mSit = texto.match(/SITUACION SINOPTICA:\s*([\s\S]*?)(?=PRONOSTICO)/i);
+                if (mSit) ws["B5"] = { t: 's', v: limpiarTexto(mSit[1]) };
 
-                const bloqueP1 = texto.match(/PRONOSTICO:\s*([\s\S]*?)(?=TEMPERATURA|PRONOSTICO VALIDO|EMITIDO|$)/i);
-                if (bloqueP1) {
-                    const p1 = bloqueP1[1];
-                    ws["B7"] = { t: 's', v: limpiarTexto(p1.split(",")[0]) };
-                    const vis = p1.match(/VIS\s+([\s\S]+?)(?=VTO|MAR)/i);
-                    const vto = p1.match(/VTO\s+([\s\S]+?)(?=MAR|$)/i);
-                    const mar = p1.match(/MAR\s+([\s\S]+?)(?=\.[\s\r\n]*$|\r?\n|$)/i);
-                    if (vis) ws["C7"] = { t: 's', v: limpiarTexto(vis[1]) };
-                    if (vto) ws["E7"] = { t: 's', v: limpiarTexto(vto[1]) };
-                    if (mar) ws["I7"] = { t: 's', v: limpiarTexto(mar[1]) };
+                const mPro = texto.match(/PRONOSTICO:\s*([\s\S]*?)(?=TEMPERATURA|PRONOSTICO VALIDO|EMITIDO|$)/i);
+                if (mPro) {
+                    const p = mPro[1];
+                    ws["B7"] = { t: 's', v: limpiarTexto(p.split(",")[0]) };
+                    const v1 = p.match(/VIS\s+([\s\S]+?)(?=VTO|MAR)/i);
+                    const v2 = p.match(/VTO\s+([\s\S]+?)(?=MAR|$)/i);
+                    const v3 = p.match(/MAR\s+([\s\S]+?)(?=\.[\s\r\n]*$|\r?\n|$)/i);
+                    if (v1) ws["C7"] = { t: 's', v: limpiarTexto(v1[1]) };
+                    if (v2) ws["E7"] = { t: 's', v: limpiarTexto(v2[1]) };
+                    if (v3) ws["I7"] = { t: 's', v: limpiarTexto(v3[1]) };
                 }
-                
-                // Temperaturas
-                const tMin1 = texto.match(/MINIMA\s*PROBABLE\s*[:\-]?\s*(\d+\s*°C)/i);
-                const tMax1 = texto.match(/MAXIMA\s*PROBABLE\s*[:\-]?\s*(\d+\s*°C)/i);
-                ws["B8"] = tMin1 ? { t: 's', v: tMin1[1] } : { t: 's', v: "" };
-                ws["B9"] = tMax1 ? { t: 's', v: tMax1[1] } : { t: 's', v: "" };
 
-                // Nocturno y Días Futuros (Misma lógica previa corregida)
-                // ... (Se mantiene la lógica funcional de las versiones anteriores)
+                // Temperaturas
+                const t1 = texto.match(/MINIMA\s*PROBABLE\s*[:\-]?\s*(\d+\s*°C)/i);
+                const t2 = texto.match(/MAXIMA\s*PROBABLE\s*[:\-]?\s*(\d+\s*°C)/i);
+                if (t1) ws["B8"] = { t: 's', v: t1[1] };
+                if (t2) ws["B9"] = { t: 's', v: t2[1] };
+
+                // 3. NOCTURNO
+                const mNoc = texto.match(/PRONOSTICO VALIDO DESDE\s*(\d{2})\d{4}\s*HASTA\s*(\d{2})\d{4}\s*HORA LOCAL\.\s*([\s\S]*?)(?=(?:LUNES|MARTES|MIERCOLES|JUEVES|VIERNES|SABADO|DOMINGO)\s*\d{2}|MET011|EMITIDO|$)/i);
+                if (mNoc) {
+                    ws["B11"] = { t: 's', v: obtenerNombreDia(mNoc[1]) + " " + mNoc[1] };
+                    ws["B12"] = { t: 's', v: obtenerNombreDia(mNoc[2]) + " " + mNoc[2] };
+                    ws["C11"] = { t: 's', v: "20:00" }; ws["C12"] = { t: 's', v: "08:00" };
+                    const cn = mNoc[3];
+                    const pn = cn.split(",");
+                    ws["B13"] = { t: 's', v: limpiarTexto(pn[0]) };
+                    if (idHoja === "melinka72") {
+                        const vN = cn.match(/VTO\s+([\s\S]+?)(?=MAR|$)/i);
+                        if (vN) ws["E14"] = { t: 's', v: limpiarTexto(vN[1]) };
+                    } else if (pn.length >= 2) {
+                        ws["B14"] = { t: 's', v: limpiarTexto(pn[1]) };
+                        const v1n = cn.match(/VIS\s+([\s\S]+?)(?=VTO|MAR)/i);
+                        const v2n = cn.match(/VTO\s+([\s\S]+?)(?=MAR|$)/i);
+                        const v3n = cn.match(/MAR\s+([\s\S]+?)(?=\.[\s\r\n]*$|\r?\n|$)/i);
+                        if (v1n) ws["C14"] = { t: 's', v: limpiarTexto(v1n[1]) };
+                        if (v2n) ws["E14"] = { t: 's', v: limpiarTexto(v2n[1]) };
+                        if (v3n) ws["I14"] = { t: 's', v: limpiarTexto(v3n[1]) };
+                    }
+                }
+
+                // 4. DÍAS FUTUROS
+                const rD = /(LUNES|MARTES|MIERCOLES|JUEVES|VIERNES|SABADO|DOMINGO)\s*(\d{2})\.\s*SITUACION SINOPTICA:\s*([\s\S]*?)\s*PRONOSTICO:\s*([\s\S]*?)(?=\s*(?:MINIMA|LUNES|MARTES|MIERCOLES|JUEVES|VIERNES|SABADO|DOMINGO)|MET011|EMITIDO|$)/gi;
+                let match, c = 0;
+                while ((match = rD.exec(texto)) !== null) {
+                    c++; if (c > 2) break;
+                    let f1 = (c === 1) ? 16 : 22, f2 = (c === 1) ? 18 : 24;
+                    ws["B" + f1] = { t: 's', v: match[1] };
+                    ws["C" + f1] = { t: 'n', v: parseInt(match[2]) };
+                    ws["D" + f1] = { t: 's', v: mesActual }; 
+                    ws["B" + (f1 + 1)] = { t: 's', v: limpiarTexto(match[3]) };
+                    const pf = match[4];
+                    ws["B" + f2] = { t: 's', v: limpiarTexto(pf.split(",")[0]) };
+                    const vf1 = pf.match(/VIS\s+([\s\S]+?)(?=VTO|MAR)/i);
+                    const vf2 = pf.match(/VTO\s+([\s\S]+?)(?=MAR|$)/i);
+                    const vf3 = pf.match(/MAR\s+([\s\S]+?)(?=\.[\s\r\n]*$|\r?\n|$)/i);
+                    if (vf1) ws["C" + f2] = { t: 's', v: limpiarTexto(vf1[1]) };
+                    if (vf2) ws["E" + f2] = { t: 's', v: limpiarTexto(vf2[1]) };
+                    if (vf3) ws["I" + f2] = { t: 's', v: limpiarTexto(vf3[1]) };
+                }
             });
 
-            XLSX.writeFile(wb, "Meteo_PM_Automatico.xlsx");
-            alert("✅ ¡Archivo generado! Los TXT se cargaron en sus respectivas hojas.");
+            XLSX.writeFile(wb, "Meteo_Actualizado_Visible.xlsx");
+            alert("✅ ¡Excel generado con éxito! Revisa las hojas para ver los datos.");
         };
         reader.readAsArrayBuffer(fileInput.files[0]);
     }
