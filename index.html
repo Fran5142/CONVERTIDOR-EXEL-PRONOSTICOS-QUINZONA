@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Meteo Puerto Montt - Full Datos</title>
+    <title>Meteo Puerto Montt - Alias de Archivos</title>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <style>
         :root { --navy: #0a192f; --cyan: #64ffda; --white: #e6f1ff; --card: #112240; }
@@ -16,16 +16,17 @@
         .btn-grande { background: var(--cyan); color: var(--navy); border: none; padding: 20px; width: 100%; border-radius: 12px; font-weight: bold; font-size: 1.2rem; cursor: pointer; margin-top: 25px; transition: 0.3s; }
         .btn-grande:hover { transform: translateY(-3px); box-shadow: 0 10px 20px rgba(100, 255, 218, 0.4); }
         .status-badge { background: var(--cyan); color: var(--navy); font-size: 0.7rem; padding: 2px 8px; border-radius: 10px; position: absolute; top: 15px; right: 15px; display: none; }
+        .info-alias { font-size: 0.75rem; color: #8892b0; margin-top: 5px; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1>🚀 Sistema Meteo Puerto Montt - Control Total</h1>
+    <h1>🚀 Meteo Puerto Montt - Alias Inteligente</h1>
     
     <div class="file-section">
         <label><b>1. EXCEL ORIGINAL:</b></label> <input type="file" id="inputExcel" accept=".xlsx"><br><br>
-        <label><b>2. SUBIR TXTs:</b></label> <input type="file" id="inputTxts" accept=".txt" multiple onchange="cargarArchivos(this)">
+        <label><b>2. SUBIR TXTs (Penas, QuellonMelinka, etc):</b></label> <input type="file" id="inputTxts" accept=".txt" multiple onchange="cargarArchivos(this)">
     </div>
 
     <div class="grid-zonas">
@@ -34,25 +35,52 @@
         <div class="zona-card"><h3>PUERTO MONTT</h3><span id="b_pmontt72" class="status-badge">OK</span><textarea id="txt_pmontt72"></textarea></div>
         <div class="zona-card"><h3>BOCA DEL GUAFO</h3><span id="b_guafo72" class="status-badge">OK</span><textarea id="txt_guafo72"></textarea></div>
         <div class="zona-card"><h3>CHACABUCO</h3><span id="b_chacabuco72" class="status-badge">OK</span><textarea id="txt_chacabuco72"></textarea></div>
-        <div class="zona-card"><h3>GOLFO DE PENAS</h3><span id="b_golfopenas72" class="status-badge">OK</span><textarea id="txt_golfopenas72"></textarea></div>
-        <div class="zona-card"><h3>MELINKA</h3><span id="b_melinka72" class="status-badge">OK</span><textarea id="txt_melinka72"></textarea></div>
+        <div class="zona-card">
+            <h3>GOLFO DE PENAS</h3><span id="b_golfopenas72" class="status-badge">OK</span>
+            <textarea id="txt_golfopenas72"></textarea>
+            <div class="info-alias">Acepta archivo: penas72.txt</div>
+        </div>
+        <div class="zona-card">
+            <h3>MELINKA</h3><span id="b_melinka72" class="status-badge">OK</span>
+            <textarea id="txt_melinka72"></textarea>
+            <div class="info-alias">Acepta archivo: QuellonMelinka72.txt</div>
+        </div>
     </div>
 
-    <button class="btn-grande" onclick="procesarTodo()">GENERAR EXCEL CON TEMPERATURAS</button>
+    <button class="btn-grande" onclick="procesarTodo()">GENERAR EXCEL FINAL</button>
 </div>
 
 <script>
     const meses = ["ENERO","FEBRERO","MARZO","ABRIL","MAYO","JUNIO","JULIO","AGOSTO","SEPTIEMBRE","OCTUBRE","NOVIEMBRE","DICIEMBRE"];
 
+    // Configuración de alias: nombre del archivo -> ID del cuadro de texto
+    const mapaAlias = {
+        "penas72": "txt_golfopenas72",
+        "quellonmelinka72": "txt_melinka72",
+        "golfopenas72": "txt_golfopenas72",
+        "melinka72": "txt_melinka72",
+        "maullin72": "txt_maullin72",
+        "chacao72": "txt_chacao72",
+        "pmontt72": "txt_pmontt72",
+        "guafo72": "txt_guafo72",
+        "chacabuco72": "txt_chacabuco72"
+    };
+
     function cargarArchivos(input) {
         Array.from(input.files).forEach(file => {
-            const id = file.name.toLowerCase().replace(".txt", "");
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                const ta = document.getElementById("txt_" + id);
-                if (ta) { ta.value = e.target.result; document.getElementById("b_" + id).style.display = "block"; }
-            };
-            reader.readAsText(file);
+            const nombreArchivo = file.name.toLowerCase().replace(".txt", "");
+            const idDestino = mapaAlias[nombreArchivo];
+            
+            if (idDestino) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    document.getElementById(idDestino).value = e.target.result;
+                    // Mostrar badge OK
+                    const idBadge = idDestino.replace("txt_", "b_");
+                    document.getElementById(idBadge).style.display = "block";
+                };
+                reader.readAsText(file);
+            }
         });
     }
 
@@ -87,7 +115,7 @@
                 const ws = wb.Sheets[idHoja];
                 if (!ws) return;
 
-                // Limpieza total y Espacios J/K
+                // Limpieza y Espacios J/K
                 const borrar = ["B2","B3","B4","B5","B7","C7","E7","I7","B8","B9","B10","B11","B12","C11","C12","B13","B14","C14","E14","I14","B16","C16","D16","B17","B18","C18","E18","I18","B19","B20","B22","C22","D22","B23","B24","C24","E24","I24","B25","B26"];
                 borrar.forEach(r => ws[r] = { t: 's', v: "" });
                 ["J7","K7","J14","K14","J18","K18","J24","K24"].forEach(r => ws[r] = { t: 's', v: "  " });
@@ -95,7 +123,7 @@
                 const texto = document.getElementById("txt_" + idHoja).value.trim();
                 if (!texto) return;
 
-                // 1. CABECERA
+                // --- Extracción Día 1 ---
                 const mCab = texto.match(/VALIDO DESDE\s*(\d{2})/i);
                 if (mCab) {
                     ws["B2"] = { t: 's', v: obtenerNombreDia(mCab[1]) };
@@ -103,7 +131,6 @@
                     ws["B4"] = { t: 's', v: mesActual };
                 }
 
-                // 2. DÍA 1 (SITUACION, PRONOSTICO Y TEMP)
                 const mSit = texto.match(/SITUACION SINOPTICA:\s*([\s\S]*?)(?=PRONOSTICO)/i);
                 if (mSit) ws["B5"] = { t: 's', v: limpiarTexto(mSit[1]) };
 
@@ -124,7 +151,7 @@
                 if (tMin1) ws["B8"] = { t: 's', v: tMin1[1] };
                 if (tMax1) ws["B9"] = { t: 's', v: tMax1[1] };
 
-                // 3. NOCTURNO
+                // --- Nocturno ---
                 const mNoc = texto.match(/PRONOSTICO VALIDO DESDE\s*(\d{2})\d{4}\s*HASTA\s*(\d{2})\d{4}\s*HORA LOCAL\.\s*([\s\S]*?)(?=(?:LUNES|MARTES|MIERCOLES|JUEVES|VIERNES|SABADO|DOMINGO)\s*\d{2}|MET011|EMITIDO|$)/i);
                 if (mNoc) {
                     ws["B11"] = { t: 's', v: obtenerNombreDia(mNoc[1]) + " " + mNoc[1] };
@@ -138,44 +165,36 @@
                     if (v1n) ws["C14"] = { t: 's', v: limpiarTexto(v1n[1]) };
                     if (v2n) ws["E14"] = { t: 's', v: limpiarTexto(v2n[1]) };
                     if (v3n) ws["I14"] = { t: 's', v: limpiarTexto(v3n[1]) };
-                    if (idHoja !== "melinka72" && cn.split(",").length >= 2) {
-                        ws["B14"] = { t: 's', v: limpiarTexto(cn.split(",")[1]) };
-                    }
+                    if (idHoja !== "melinka72" && cn.split(",").length >= 2) ws["B14"] = { t: 's', v: limpiarTexto(cn.split(",")[1]) };
                 }
 
-                // 4. DÍAS FUTUROS (CON TEMPERATURAS)
+                // --- Días Futuros (con Temperaturas) ---
                 const rD = /(LUNES|MARTES|MIERCOLES|JUEVES|VIERNES|SABADO|DOMINGO)\s*(\d{2})\.\s*SITUACION SINOPTICA:\s*([\s\S]*?)\s*PRONOSTICO:\s*([\s\S]*?)(?=\s*(?:LUNES|MARTES|MIERCOLES|JUEVES|VIERNES|SABADO|DOMINGO)|MET011|EMITIDO|$)/gi;
                 let match, c = 0;
                 while ((match = rD.exec(texto)) !== null) {
                     c++; if (c > 2) break;
-                    let fBase = (c === 1) ? 16 : 22;
-                    let fPron = (c === 1) ? 18 : 24;
-                    
-                    ws["B" + fBase] = { t: 's', v: match[1] };
-                    ws["C" + fBase] = { t: 'n', v: parseInt(match[2]) };
-                    ws["D" + fBase] = { t: 's', v: mesActual }; 
-                    ws["B" + (fBase + 1)] = { t: 's', v: limpiarTexto(match[3]) };
-
+                    let fB = (c === 1) ? 16 : 22, fP = (c === 1) ? 18 : 24;
+                    ws["B" + fB] = { t: 's', v: match[1] };
+                    ws["C" + fB] = { t: 'n', v: parseInt(match[2]) };
+                    ws["D" + fB] = { t: 's', v: mesActual }; 
+                    ws["B" + (fB + 1)] = { t: 's', v: limpiarTexto(match[3]) };
                     const pf = match[4];
-                    ws["B" + fPron] = { t: 's', v: limpiarTexto(pf.split(",")[0]) };
-                    
+                    ws["B" + fP] = { t: 's', v: limpiarTexto(pf.split(",")[0]) };
                     const vf1 = pf.match(/VIS\s+([\s\S]+?)(?=VTO|MAR)/i);
                     const vf2 = pf.match(/VTO\s+([\s\S]+?)(?=MAR|$)/i);
                     const vf3 = pf.match(/MAR\s+([\s\S]+?)(?=\.[\s\r\n]*$|\r?\n|$)/i);
-                    if (vf1) ws["C" + fPron] = { t: 's', v: limpiarTexto(vf1[1]) };
-                    if (vf2) ws["E" + fPron] = { t: 's', v: limpiarTexto(vf2[1]) };
-                    if (vf3) ws["I" + fPron] = { t: 's', v: limpiarTexto(vf3[1]) };
-
-                    // Extraer temperaturas del bloque específico de este día
+                    if (vf1) ws["C" + fP] = { t: 's', v: limpiarTexto(vf1[1]) };
+                    if (vf2) ws["E" + fP] = { t: 's', v: limpiarTexto(vf2[1]) };
+                    if (vf3) ws["I" + fP] = { t: 's', v: limpiarTexto(vf3[1]) };
                     const tMinF = pf.match(/MINIMA\s*PROBABLE\s*[:\-]?\s*(\d+\s*°C)/i);
                     const tMaxF = pf.match(/MAXIMA\s*PROBABLE\s*[:\-]?\s*(\d+\s*°C)/i);
-                    if (tMinF) ws["B" + (fBase + 3)] = { t: 's', v: tMinF[1] };
-                    if (tMaxF) ws["B" + (fBase + 4)] = { t: 's', v: tMaxF[1] };
+                    if (tMinF) ws["B" + (fB + 3)] = { t: 's', v: tMinF[1] };
+                    if (tMaxF) ws["B" + (fB + 4)] = { t: 's', v: tMaxF[1] };
                 }
             });
 
-            XLSX.writeFile(wb, "Meteo_PM_Completo.xlsx");
-            alert("✅ ¡Excel generado con éxito con todas las temperaturas!");
+            XLSX.writeFile(wb, "Meteo_PM_Verificado.xlsx");
+            alert("✅ ¡Excel verificado y generado!");
         };
         reader.readAsArrayBuffer(fileInput.files[0]);
     }
