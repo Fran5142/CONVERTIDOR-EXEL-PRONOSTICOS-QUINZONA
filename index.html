@@ -243,8 +243,8 @@
                 if (mPro) {
                     const p = mPro[1];
                     ws["B7"] = { t: 's', v: limpiarTexto(p.split(",")[0]) };
-                    const v1 = p.match(/VIS\s+([\s\S]+?)(?=VTO|MAR)/i);
-                    const v2 = p.match(/VTO\s+([\s\S]+?)(?=MAR|$)/i);
+                    const v1 = p.match(/VIS\s+([\s\S]+?)(?=VIENTO|MAR)/i);
+                    const v2 = p.match(/VIENTO\s+([\s\S]+?)(?=MAR|$)/i);
                     const v3 = p.match(/MAR\s+([\s\S]+?)(?=\.[\s\r\n]*$|\r?\n|$)/i);
                     if (v1) ws["C7"] = { t: 's', v: limpiarTexto(v1[1]) };
                     if (v2) ws["E7"] = { t: 's', v: limpiarTexto(v2[1]) };
@@ -263,8 +263,8 @@
                     ws["C11"] = { t: 's', v: "20:00" }; ws["C12"] = { t: 's', v: "08:00" };
                     const cn = mNoc[3];
                     ws["B13"] = { t: 's', v: limpiarTexto(cn.split(",")[0]) };
-                    const vn1 = cn.match(/VIS\s+([\s\S]+?)(?=VTO|MAR)/i);
-                    const vn2 = cn.match(/VTO\s+([\s\S]+?)(?=MAR|$)/i);
+                    const vn1 = cn.match(/VIS\s+([\s\S]+?)(?=VIENTO|MAR)/i);
+                    const vn2 = cn.match(/VIENTO\s+([\s\S]+?)(?=MAR|$)/i);
                     const vn3 = cn.match(/MAR\s+([\s\S]+?)(?=\.[\s\r\n]*$|\r?\n|$)/i);
                     if (vn1) ws["C14"] = { t: 's', v: limpiarTexto(vn1[1]) };
                     if (vn2) ws["E14"] = { t: 's', v: limpiarTexto(vn2[1]) };
@@ -284,8 +284,8 @@
                     ws["B" + (fBase + 1)] = { t: 's', v: limpiarTexto(match[3]) };
                     const pf = match[4];
                     ws["B" + fPron] = { t: 's', v: limpiarTexto(pf.split(",")[0]) };
-                    const vf1 = pf.match(/VIS\s+([\s\S]+?)(?=VTO|MAR)/i);
-                    const vf2 = pf.match(/VTO\s+([\s\S]+?)(?=MAR|$)/i);
+                    const vf1 = pf.match(/VIS\s+([\s\S]+?)(?=VIENTO|MAR)/i);
+                    const vf2 = pf.match(/VIENTO\s+([\s\S]+?)(?=MAR|$)/i);
                     const vf3 = pf.match(/MAR\s+([\s\S]+?)(?=\.[\s\r\n]*$|\r?\n|$)/i);
                     if (vf1) ws["C" + fPron] = { t: 's', v: limpiarTexto(vf1[1]) };
                     if (vf2) ws["E" + fPron] = { t: 's', v: limpiarTexto(vf2[1]) };
