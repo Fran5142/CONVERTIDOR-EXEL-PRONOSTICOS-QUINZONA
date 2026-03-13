@@ -2,43 +2,146 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>CONVERTIDOR DE PRONOSTICOS BAHIAS</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Convertidor Excel - Pronósticos Bahías</title>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <style>
-        :root { --navy: #0a192f; --cyan: #64ffda; --white: #e6f1ff; --card: #112240; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--navy); color: var(--white); padding: 20px; }
-        .container { max-width: 1200px; margin: auto; }
-        h1 { text-align: center; color: var(--cyan); text-transform: uppercase; letter-spacing: 2px; }
-        .file-section { background: var(--card); padding: 20px; border-radius: 12px; margin-bottom: 20px; border: 1px solid var(--cyan); text-align: center; }
-        .grid-zonas { display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 15px; }
-        .zona-card { background: var(--card); padding: 15px; border-radius: 10px; border-top: 4px solid var(--cyan); position: relative; }
-        textarea { width: 100%; height: 180px; background: #0a192f; border: 1px solid #233554; color: white; border-radius: 5px; padding: 10px; box-sizing: border-box; resize: none; font-size: 0.85rem; }
-        .btn-grande { background: var(--cyan); color: var(--navy); border: none; padding: 20px; width: 100%; border-radius: 12px; font-weight: bold; font-size: 1.2rem; cursor: pointer; margin-top: 25px; transition: 0.3s; }
-        .btn-grande:hover { transform: translateY(-3px); box-shadow: 0 10px 20px rgba(100, 255, 218, 0.4); }
-        .status-badge { background: var(--cyan); color: var(--navy); font-size: 0.7rem; padding: 2px 8px; border-radius: 10px; position: absolute; top: 15px; right: 15px; display: none; }
+        :root {
+            --navy-primary: #001d3d;
+            --navy-secondary: #003566;
+            --gold-accent: #ffc300;
+            --gold-hover: #ffd60a;
+            --text-white: #ffffff;
+            --text-gray: #a3bac3;
+            --card-bg: rgba(255, 255, 255, 0.03);
+        }
+
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background-color: var(--navy-primary);
+            background-image: radial-gradient(circle at top right, #003566 0%, #000814 100%);
+            color: var(--text-white);
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: auto;
+            background: var(--card-bg);
+            border: 1px solid rgba(255, 195, 0, 0.2);
+            border-radius: 16px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(12px);
+        }
+
+        h1 {
+            text-align: center;
+            color: var(--gold-accent);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            border-bottom: 2px solid var(--gold-accent);
+            padding-bottom: 10px;
+        }
+
+        .file-section {
+            background: var(--navy-secondary);
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 25px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            border: 1px solid rgba(255, 195, 0, 0.1);
+        }
+
+        .file-group { display: flex; flex-direction: column; gap: 8px; }
+
+        label { font-weight: bold; color: var(--gold-accent); font-size: 13px; }
+
+        input[type="file"] {
+            color: var(--text-gray);
+            background: rgba(255,255,255,0.05);
+            padding: 8px;
+            border-radius: 6px;
+            border: 1px dashed var(--gold-accent);
+        }
+
+        .grid-zonas {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 15px;
+        }
+
+        .zona-card {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px;
+            border-radius: 10px;
+            border-left: 4px solid var(--gold-accent);
+            position: relative;
+        }
+
+        textarea {
+            width: 100%; height: 120px; background: #fff; color: #1a1a1a;
+            border: none; padding: 10px; border-radius: 5px; font-family: monospace;
+            font-size: 12px; resize: none; box-sizing: border-box;
+        }
+
+        .status-badge {
+            background: var(--gold-accent); color: var(--navy-primary);
+            font-size: 10px; font-weight: bold; padding: 2px 8px;
+            border-radius: 4px; position: absolute; top: 15px; right: 15px; display: none;
+        }
+
+        .btn-grande {
+            background: var(--gold-accent); color: var(--navy-primary);
+            border: none; padding: 18px; width: 100%; border-radius: 8px;
+            font-weight: 800; font-size: 16px; text-transform: uppercase;
+            cursor: pointer; margin-top: 30px; transition: 0.3s;
+        }
+
+        .btn-grande:hover { background: var(--gold-hover); transform: translateY(-2px); }
+
+        .firma {
+            margin-top: 30px; text-align: center; font-size: 11px; color: var(--text-gray);
+            border-top: 1px solid rgba(163, 186, 195, 0.2); padding-top: 15px;
+        }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1>CONVERTIDOR DE PRONOSTICOS BAHIAS</h1>
+    <h1>Convertidor Excel - Pronósticos Bahías</h1>
     
     <div class="file-section">
-        <label><b>1. EXCEL ORIGINAL:</b></label> <input type="file" id="inputExcel" accept=".xlsx"><br><br>
-        <label><b>2. SUBIR TXTs (Penas, QuellonMelinka, etc):</b></label> <input type="file" id="inputTxts" accept=".txt" multiple onchange="cargarArchivos(this)">
+        <div class="file-group">
+            <label>1. PLANTILLA EXCEL (10.- CenMeteoPUERTOMONTT_PLANTILLA):</label>
+            <input type="file" id="inputExcel" accept=".xlsx">
+        </div>
+        <div class="file-group">
+            <label>2. SUBIR TXTS:</label>
+            <input type="file" id="inputTxts" accept=".txt" multiple onchange="cargarArchivos(this)">
+        </div>
     </div>
 
     <div class="grid-zonas">
-        <div class="zona-card"><h3>MAULLÍN</h3><span id="b_maullin72" class="status-badge">OK</span><textarea id="txt_maullin72"></textarea></div>
-        <div class="zona-card"><h3>CHACAO</h3><span id="b_chacao72" class="status-badge">OK</span><textarea id="txt_chacao72"></textarea></div>
-        <div class="zona-card"><h3>PUERTO MONTT</h3><span id="b_pmontt72" class="status-badge">OK</span><textarea id="txt_pmontt72"></textarea></div>
-        <div class="zona-card"><h3>BOCA DEL GUAFO</h3><span id="b_guafo72" class="status-badge">OK</span><textarea id="txt_guafo72"></textarea></div>
-        <div class="zona-card"><h3>CHACABUCO</h3><span id="b_chacabuco72" class="status-badge">OK</span><textarea id="txt_chacabuco72"></textarea></div>
-        <div class="zona-card"><h3>GOLFO DE PENAS</h3><span id="b_golfopenas72" class="status-badge">OK</span><textarea id="txt_golfopenas72"></textarea></div>
-        <div class="zona-card"><h3>MELINKA</h3><span id="b_melinka72" class="status-badge">OK</span><textarea id="txt_melinka72"></textarea></div>
+        <div class="zona-card"><h3>Maullín</h3><span id="b_maullin72" class="status-badge">OK</span><textarea id="txt_maullin72"></textarea></div>
+        <div class="zona-card"><h3>Chacao</h3><span id="b_chacao72" class="status-badge">OK</span><textarea id="txt_chacao72"></textarea></div>
+        <div class="zona-card"><h3>Puerto Montt</h3><span id="b_pmontt72" class="status-badge">OK</span><textarea id="txt_pmontt72"></textarea></div>
+        <div class="zona-card"><h3>Boca del Guafo</h3><span id="b_guafo72" class="status-badge">OK</span><textarea id="txt_guafo72"></textarea></div>
+        <div class="zona-card"><h3>Chacabuco</h3><span id="b_chacabuco72" class="status-badge">OK</span><textarea id="txt_chacabuco72"></textarea></div>
+        <div class="zona-card"><h3>Golfo de Penas</h3><span id="b_golfopenas72" class="status-badge">OK</span><textarea id="txt_golfopenas72"></textarea></div>
+        <div class="zona-card"><h3>Melinka</h3><span id="b_melinka72" class="status-badge">OK</span><textarea id="txt_melinka72"></textarea></div>
     </div>
 
-    <button class="btn-grande" onclick="procesarTodo()">GENERAR EXCEL CORREGIDO</button>
+    <button class="btn-grande" onclick="procesarTodo()">Generar Excel</button>
+
+    <div class="firma">
+        <strong>SISTEMA DE PROCESAMIENTO METEOROLÓGICO</strong><br>
+        Creado por Cabo 1º (Met.) Francisco Salas Muñoz - 2026
+    </div>
 </div>
 
 <script>
@@ -83,12 +186,13 @@
 
     function procesarTodo() {
         const fileInput = document.getElementById("inputExcel");
-        if (fileInput.files.length === 0) { alert("Sube el Excel."); return; }
+        if (fileInput.files.length === 0) { alert("Sube la plantilla."); return; }
 
         const reader = new FileReader();
         reader.onload = function(e) {
             const data = new Uint8Array(e.target.result);
-            const wb = XLSX.read(data, { type: 'array' });
+            const wb = XLSX.read(data, { type: 'array', cellStyles: true });
+            
             const idsHojas = ["maullin72", "chacao72", "pmontt72", "guafo72", "chacabuco72", "golfopenas72", "melinka72"];
             const mesActual = meses[new Date().getMonth()];
 
@@ -96,25 +200,35 @@
                 const ws = wb.Sheets[idHoja];
                 if (!ws) return;
 
-                // --- LIMPIEZA CORREGIDA (Se agregaron F7, F14, F18, F24) ---
+                // 1. LIMPIEZA DE CELDAS (Incluyendo columnas J y K)
                 const celdasALimpiar = [
-                    "B2","B3","B4","B5","B7","C7","D7","E7","F7","G7","H7","I7",
+                    "B2","B3","B4","B5","B7","C7","D7","E7","F7","G7","H7","I7","J7","K7",
                     "B8","B9","B10","B11","B12","C11","C12",
-                    "B13","B14","C14","D14","E14","F14","G14","H14","I14",
-                    "B16","C16","D16","B17","B18","C18","D18","E18","F18","G18","H18","I18",
-                    "B19","B20","B22","C22","D22","B23","B24","C24","D24","E24","F24","G24","H24","I24",
+                    "B13","B14","C14","D14","E14","F14","G14","H14","I14","J14","K14",
+                    "B16","C16","D16","B17","B18","C18","D18","E18","F18","G18","H18","I18","J18","K18",
+                    "B19","B20","B22","C22","D22","B23","B24","C24","D24","E24","F24","G24","H24","I24","J24","K24",
                     "B25","B26"
                 ];
                 celdasALimpiar.forEach(r => { if(ws[r]) ws[r] = { t: 's', v: "" } });
 
+                // 2. INSERCIÓN DE ESPACIOS FICTICIOS (Dos espacios "  ")
+                const celdasConEspacios = [
+                    "F7","G7","H7","J7","K7",
+                    "F14","G14","H14","J14","K14",
+                    "F18","G18","H18","J18","K18",
+                    "F24","G24","H24","J24","K24"
+                ];
+                celdasConEspacios.forEach(ref => {
+                    ws[ref] = { t: 's', v: "  " };
+                });
+
                 const texto = document.getElementById("txt_" + idHoja).value.trim();
                 if (!texto) return;
 
-                // 1. CAPTURA INDICE UV (B10)
+                // 3. EXTRACCIÓN DE DATOS
                 const mUV = texto.match(/INDICE DE RADIACION ULTRAVIOLETA:\s*([\s\S]*?)(?=\r?\n|APRECIACION|VALIDO|$)/i);
                 if (mUV) ws["B10"] = { t: 's', v: limpiarTexto(mUV[1]) };
 
-                // 2. DIA 1 (Cabecera)
                 const mCab = texto.match(/VALIDO DESDE\s*(\d{2})/i);
                 if (mCab) {
                     ws["B2"] = { t: 's', v: obtenerNombreDia(mCab[1]) };
@@ -122,11 +236,9 @@
                     ws["B4"] = { t: 's', v: mesActual };
                 }
 
-                // 3. SITUACION SINOPTICA
                 const mSit = texto.match(/SITUACION SINOPTICA:\s*([\s\S]*?)(?=PRONOSTICO)/i);
                 if (mSit) ws["B5"] = { t: 's', v: limpiarTexto(mSit[1]) };
 
-                // 4. PRONOSTICO PRINCIPAL
                 const mPro = texto.match(/PRONOSTICO:\s*([\s\S]*?)(?=TEMPERATURA|PRONOSTICO VALIDO|EMITIDO|$)/i);
                 if (mPro) {
                     const p = mPro[1];
@@ -139,13 +251,11 @@
                     if (v3) ws["I7"] = { t: 's', v: limpiarTexto(v3[1]) };
                 }
 
-                // 5. TEMPERATURAS
                 const tMin1 = texto.match(/MINIMA\s*PROBABLE\s*[:\-]?\s*(\d+\s*°C)/i);
                 const tMax1 = texto.match(/MAXIMA\s*PROBABLE\s*[:\-]?\s*(\d+\s*°C)/i);
                 if (tMin1) ws["B8"] = { t: 's', v: tMin1[1] };
                 if (tMax1) ws["B9"] = { t: 's', v: tMax1[1] };
 
-                // 6. NOCTURNO
                 const mNoc = texto.match(/PRONOSTICO VALIDO DESDE\s*(\d{2})\d{4}\s*HASTA\s*(\d{2})\d{4}[\s\S]*HORA LOCAL\.\s*([\s\S]*?)(?=(?:LUNES|MARTES|MIERCOLES|JUEVES|VIERNES|SABADO|DOMINGO)\s*\d{2}|MET011|EMITIDO|$)/i);
                 if (mNoc) {
                     ws["B11"] = { t: 's', v: obtenerNombreDia(mNoc[1]) + " " + mNoc[1] };
@@ -162,19 +272,16 @@
                     if (idHoja !== "melinka72" && cn.split(",").length >= 2) ws["B14"] = { t: 's', v: limpiarTexto(cn.split(",")[1]) };
                 }
 
-                // 7. DIAS FUTUROS
                 const regexDias = /(LUNES|MARTES|MIERCOLES|JUEVES|VIERNES|SABADO|DOMINGO)\s+(\d{2})[\s.]*SITUACION SINOPTICA:\s*([\s\S]*?)\s*PRONOSTICO:\s*([\s\S]*?)(?=(?:LUNES|MARTES|MIERCOLES|JUEVES|VIERNES|SABADO|DOMINGO)\s+\d{2}|MET011|EMITIDO|$)/gi;
                 let match, contador = 0;
                 while ((match = regexDias.exec(texto)) !== null) {
                     contador++; if (contador > 2) break;
                     let fBase = (contador === 1) ? 16 : 22;
                     let fPron = (contador === 1) ? 18 : 24;
-
                     ws["B" + fBase] = { t: 's', v: match[1] };
                     ws["C" + fBase] = { t: 'n', v: parseInt(match[2]) };
                     ws["D" + fBase] = { t: 's', v: mesActual };
                     ws["B" + (fBase + 1)] = { t: 's', v: limpiarTexto(match[3]) };
-
                     const pf = match[4];
                     ws["B" + fPron] = { t: 's', v: limpiarTexto(pf.split(",")[0]) };
                     const vf1 = pf.match(/VIS\s+([\s\S]+?)(?=VTO|MAR)/i);
@@ -183,7 +290,6 @@
                     if (vf1) ws["C" + fPron] = { t: 's', v: limpiarTexto(vf1[1]) };
                     if (vf2) ws["E" + fPron] = { t: 's', v: limpiarTexto(vf2[1]) };
                     if (vf3) ws["I" + fPron] = { t: 's', v: limpiarTexto(vf3[1]) };
-
                     const tMinF = pf.match(/MINIMA\s*PROBABLE\s*[:\-]?\s*(\d+\s*°C)/i);
                     const tMaxF = pf.match(/MAXIMA\s*PROBABLE\s*[:\-]?\s*(\d+\s*°C)/i);
                     if (tMinF) ws["B" + (fBase + 3)] = { t: 's', v: tMinF[1] };
@@ -192,7 +298,7 @@
             });
 
             XLSX.writeFile(wb, "10.- CenMeteoPUERTOMONTT.xlsx");
-            alert("✅ Archivo generado con éxito. Las celdas duplicadas han sido eliminadas.");
+            alert("✅ Procesado finalizado con éxito.");
         };
         reader.readAsArrayBuffer(fileInput.files[0]);
     }
