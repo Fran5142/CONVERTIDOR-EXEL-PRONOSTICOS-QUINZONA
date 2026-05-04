@@ -4,8 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Convertidor Excel - Pronósticos Bahías</title>
-    <!-- Se reemplaza SheetJS por ExcelJS para mantener fórmulas y formatos intactos -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <style>
         :root {
             --navy-primary: #001d3d;
@@ -137,7 +136,7 @@
         <div class="zona-card"><h3>Melinka</h3><span id="b_melinka72" class="status-badge">OK</span><textarea id="txt_melinka72"></textarea></div>
     </div>
 
-    <button class="btn-grande" id="btnGenerar" onclick="procesarTodo()">Generar Excel</button>
+    <button class="btn-grande" onclick="procesarTodo()">Generar Excel</button>
 
     <div class="firma">
         <strong>SISTEMA DE PROCESAMIENTO METEOROLÓGICO</strong><br>
@@ -173,10 +172,7 @@
         if (!t) return "";
         let l = t.trim().replace(/,$/, "");
         if (l.endsWith(".") && !/\d$/.test(l.slice(-2, -1))) l = l.slice(0, -1);
-        l = l.trim().replace(/\s+/g, " ");
-        // Ajuste para normalizar el punto cardinal
-        l = l.replace(/\bNW\b/g, "Norweste"); 
-        return l;
+        return l.trim().replace(/\s+/g, " ");
     }
 
     function obtenerNombreDia(numStr) {
@@ -188,27 +184,23 @@
         return dias[f.getDay()];
     }
 
-    async function procesarTodo() {
+    function procesarTodo() {
         const fileInput = document.getElementById("inputExcel");
-        if (fileInput.files.length === 0) { alert("Sube la plantilla Excel primero."); return; }
+        if (fileInput.files.length === 0) { alert("Sube la plantilla."); return; }
 
-        const btn = document.getElementById("btnGenerar");
-        btn.innerText = "Procesando...";
-        btn.disabled = true;
-
-        try {
-            const arrayBuffer = await fileInput.files[0].arrayBuffer();
-            const wb = new ExcelJS.Workbook();
-            await wb.xlsx.load(arrayBuffer);
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const data = new Uint8Array(e.target.result);
+            const wb = XLSX.read(data, { type: 'array', cellStyles: true });
             
             const idsHojas = ["maullin72", "chacao72", "pmontt72", "guafo72", "chacabuco72", "golfopenas72", "melinka72"];
             const mesActual = meses[new Date().getMonth()];
 
             idsHojas.forEach(idHoja => {
-                const ws = wb.getWorksheet(idHoja);
+                const ws = wb.Sheets[idHoja];
                 if (!ws) return;
 
-                // 1. LIMPIEZA DE CELDAS (ExcelJS mantiene el formato de la celda intacto)
+                // 1. LIMPIEZA DE CELDAS (Incluyendo columnas J y K)
                 const celdasALimpiar = [
                     "B2","B3","B4","B5","B7","C7","D7","E7","F7","G7","H7","I7","J7","K7",
                     "B8","B9","B10","B11","B12","C11","C12",
@@ -217,12 +209,9 @@
                     "B19","B20","B22","C22","D22","B23","B24","C24","D24","E24","F24","G24","H24","I24","J24","K24",
                     "B25","B26"
                 ];
-                celdasALimpiar.forEach(r => { 
-                    const cell = ws.getCell(r);
-                    if(cell) cell.value = ""; 
-                });
+                celdasALimpiar.forEach(r => { if(ws[r]) ws[r] = { t: 's', v: "" } });
 
-                // 2. INSERCIÓN DE ESPACIOS FICTICIOS
+                // 2. INSERCIÓN DE ESPACIOS FICTICIOS (Dos espacios "  ")
                 const celdasConEspacios = [
                     "F7","G7","H7","J7","K7",
                     "F14","G14","H14","J14","K14",
@@ -230,8 +219,7 @@
                     "F24","G24","H24","J24","K24"
                 ];
                 celdasConEspacios.forEach(ref => {
-                    const cell = ws.getCell(ref);
-                    if(cell) cell.value = "  ";
+                    ws[ref] = { t: 's', v: "  " };
                 });
 
                 const texto = document.getElementById("txt_" + idHoja).value.trim();
@@ -239,50 +227,49 @@
 
                 // 3. EXTRACCIÓN DE DATOS
                 const mUV = texto.match(/INDICE DE RADIACION ULTRAVIOLETA:\s*([\s\S]*?)(?=\r?\n|APRECIACION|VALIDO|$)/i);
-                if (mUV) ws.getCell("B10").value = limpiarTexto(mUV[1]);
+                if (mUV) ws["B10"] = { t: 's', v: limpiarTexto(mUV[1]) };
 
                 const mCab = texto.match(/VALIDO DESDE\s*(\d{2})/i);
                 if (mCab) {
-                    ws.getCell("B2").value = obtenerNombreDia(mCab[1]);
-                    ws.getCell("B3").value = parseInt(mCab[1]);
-                    ws.getCell("B4").value = mesActual;
+                    ws["B2"] = { t: 's', v: obtenerNombreDia(mCab[1]) };
+                    ws["B3"] = { t: 'n', v: parseInt(mCab[1]) };
+                    ws["B4"] = { t: 's', v: mesActual };
                 }
 
                 const mSit = texto.match(/SITUACION SINOPTICA:\s*([\s\S]*?)(?=PRONOSTICO)/i);
-                if (mSit) ws.getCell("B5").value = limpiarTexto(mSit[1]);
+                if (mSit) ws["B5"] = { t: 's', v: limpiarTexto(mSit[1]) };
 
                 const mPro = texto.match(/PRONOSTICO:\s*([\s\S]*?)(?=TEMPERATURA|PRONOSTICO VALIDO|EMITIDO|$)/i);
                 if (mPro) {
                     const p = mPro[1];
-                    ws.getCell("B7").value = limpiarTexto(p.split(",")[0]);
+                    ws["B7"] = { t: 's', v: limpiarTexto(p.split(",")[0]) };
                     const v1 = p.match(/VIS\s+([\s\S]+?)(?=VIENTO|MAR)/i);
                     const v2 = p.match(/VIENTO\s+([\s\S]+?)(?=MAR|$)/i);
                     const v3 = p.match(/MAR\s+([\s\S]+?)(?=\.[\s\r\n]*$|\r?\n|$)/i);
-                    if (v1) ws.getCell("C7").value = limpiarTexto(v1[1]);
-                    if (v2) ws.getCell("E7").value = limpiarTexto(v2[1]);
-                    if (v3) ws.getCell("I7").value = limpiarTexto(v3[1]);
+                    if (v1) ws["C7"] = { t: 's', v: limpiarTexto(v1[1]) };
+                    if (v2) ws["E7"] = { t: 's', v: limpiarTexto(v2[1]) };
+                    if (v3) ws["I7"] = { t: 's', v: limpiarTexto(v3[1]) };
                 }
 
                 const tMin1 = texto.match(/MINIMA\s*PROBABLE\s*[:\-]?\s*(\d+\s*°C)/i);
                 const tMax1 = texto.match(/MAXIMA\s*PROBABLE\s*[:\-]?\s*(\d+\s*°C)/i);
-                if (tMin1) ws.getCell("B8").value = tMin1[1];
-                if (tMax1) ws.getCell("B9").value = tMax1[1];
+                if (tMin1) ws["B8"] = { t: 's', v: tMin1[1] };
+                if (tMax1) ws["B9"] = { t: 's', v: tMax1[1] };
 
                 const mNoc = texto.match(/PRONOSTICO VALIDO DESDE\s*(\d{2})\d{4}\s*HASTA\s*(\d{2})\d{4}[\s\S]*HORA LOCAL\.\s*([\s\S]*?)(?=(?:LUNES|MARTES|MIERCOLES|JUEVES|VIERNES|SABADO|DOMINGO)\s*\d{2}|MET011|EMITIDO|$)/i);
                 if (mNoc) {
-                    ws.getCell("B11").value = obtenerNombreDia(mNoc[1]) + " " + mNoc[1];
-                    ws.getCell("B12").value = obtenerNombreDia(mNoc[2]) + " " + mNoc[2];
-                    ws.getCell("C11").value = "20:00"; 
-                    ws.getCell("C12").value = "08:00";
+                    ws["B11"] = { t: 's', v: obtenerNombreDia(mNoc[1]) + " " + mNoc[1] };
+                    ws["B12"] = { t: 's', v: obtenerNombreDia(mNoc[2]) + " " + mNoc[2] };
+                    ws["C11"] = { t: 's', v: "20:00" }; ws["C12"] = { t: 's', v: "08:00" };
                     const cn = mNoc[3];
-                    ws.getCell("B13").value = limpiarTexto(cn.split(",")[0]);
+                    ws["B13"] = { t: 's', v: limpiarTexto(cn.split(",")[0]) };
                     const vn1 = cn.match(/VIS\s+([\s\S]+?)(?=VIENTO|MAR)/i);
                     const vn2 = cn.match(/VIENTO\s+([\s\S]+?)(?=MAR|$)/i);
                     const vn3 = cn.match(/MAR\s+([\s\S]+?)(?=\.[\s\r\n]*$|\r?\n|$)/i);
-                    if (vn1) ws.getCell("C14").value = limpiarTexto(vn1[1]);
-                    if (vn2) ws.getCell("E14").value = limpiarTexto(vn2[1]);
-                    if (vn3) ws.getCell("I14").value = limpiarTexto(vn3[1]);
-                    if (idHoja !== "melinka72" && cn.split(",").length >= 2) ws.getCell("B14").value = limpiarTexto(cn.split(",")[1]);
+                    if (vn1) ws["C14"] = { t: 's', v: limpiarTexto(vn1[1]) };
+                    if (vn2) ws["E14"] = { t: 's', v: limpiarTexto(vn2[1]) };
+                    if (vn3) ws["I14"] = { t: 's', v: limpiarTexto(vn3[1]) };
+                    if (idHoja !== "melinka72" && cn.split(",").length >= 2) ws["B14"] = { t: 's', v: limpiarTexto(cn.split(",")[1]) };
                 }
 
                 const regexDias = /(LUNES|MARTES|MIERCOLES|JUEVES|VIERNES|SABADO|DOMINGO)\s+(\d{2})[\s.]*SITUACION SINOPTICA:\s*([\s\S]*?)\s*PRONOSTICO:\s*([\s\S]*?)(?=(?:LUNES|MARTES|MIERCOLES|JUEVES|VIERNES|SABADO|DOMINGO)\s+\d{2}|MET011|EMITIDO|$)/gi;
@@ -291,44 +278,29 @@
                     contador++; if (contador > 2) break;
                     let fBase = (contador === 1) ? 16 : 22;
                     let fPron = (contador === 1) ? 18 : 24;
-                    ws.getCell("B" + fBase).value = match[1];
-                    ws.getCell("C" + fBase).value = parseInt(match[2]);
-                    ws.getCell("D" + fBase).value = mesActual;
-                    ws.getCell("B" + (fBase + 1)).value = limpiarTexto(match[3]);
+                    ws["B" + fBase] = { t: 's', v: match[1] };
+                    ws["C" + fBase] = { t: 'n', v: parseInt(match[2]) };
+                    ws["D" + fBase] = { t: 's', v: mesActual };
+                    ws["B" + (fBase + 1)] = { t: 's', v: limpiarTexto(match[3]) };
                     const pf = match[4];
-                    ws.getCell("B" + fPron).value = limpiarTexto(pf.split(",")[0]);
+                    ws["B" + fPron] = { t: 's', v: limpiarTexto(pf.split(",")[0]) };
                     const vf1 = pf.match(/VIS\s+([\s\S]+?)(?=VIENTO|MAR)/i);
                     const vf2 = pf.match(/VIENTO\s+([\s\S]+?)(?=MAR|$)/i);
                     const vf3 = pf.match(/MAR\s+([\s\S]+?)(?=\.[\s\r\n]*$|\r?\n|$)/i);
-                    if (vf1) ws.getCell("C" + fPron).value = limpiarTexto(vf1[1]);
-                    if (vf2) ws.getCell("E" + fPron).value = limpiarTexto(vf2[1]);
-                    if (vf3) ws.getCell("I" + fPron).value = limpiarTexto(vf3[1]);
+                    if (vf1) ws["C" + fPron] = { t: 's', v: limpiarTexto(vf1[1]) };
+                    if (vf2) ws["E" + fPron] = { t: 's', v: limpiarTexto(vf2[1]) };
+                    if (vf3) ws["I" + fPron] = { t: 's', v: limpiarTexto(vf3[1]) };
                     const tMinF = pf.match(/MINIMA\s*PROBABLE\s*[:\-]?\s*(\d+\s*°C)/i);
                     const tMaxF = pf.match(/MAXIMA\s*PROBABLE\s*[:\-]?\s*(\d+\s*°C)/i);
-                    if (tMinF) ws.getCell("B" + (fBase + 3)).value = tMinF[1];
-                    if (tMaxF) ws.getCell("B" + (fBase + 4)).value = tMaxF[1];
+                    if (tMinF) ws["B" + (fBase + 3)] = { t: 's', v: tMinF[1] };
+                    if (tMaxF) ws["B" + (fBase + 4)] = { t: 's', v: tMaxF[1] };
                 }
             });
 
-            // Guardar usando ExcelJS (mantiene el archivo exactamente igual en las hojas no tocadas)
-            const buffer = await wb.xlsx.writeBuffer();
-            const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
-            const link = document.createElement("a");
-            link.href = URL.createObjectURL(blob);
-            link.download = "10.- CenMeteoPUERTOMONTT.xlsx";
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-
-            alert("✅ Procesado finalizado con éxito. Las carpetas restantes se mantuvieron intactas.");
-
-        } catch (error) {
-            console.error(error);
-            alert("Hubo un problema procesando el archivo: " + error.message);
-        } finally {
-            btn.innerText = "Generar Excel";
-            btn.disabled = false;
-        }
+            XLSX.writeFile(wb, "10.- CenMeteoPUERTOMONTT.xlsx");
+            alert("✅ Procesado finalizado con éxito.");
+        };
+        reader.readAsArrayBuffer(fileInput.files[0]);
     }
 </script>
 </body>
